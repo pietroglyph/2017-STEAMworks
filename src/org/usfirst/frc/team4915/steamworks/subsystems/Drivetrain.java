@@ -14,7 +14,6 @@ import java.util.stream.Collectors;
 import org.usfirst.frc.team4915.steamworks.Logger;
 import org.usfirst.frc.team4915.steamworks.RobotMap;
 import org.usfirst.frc.team4915.steamworks.commands.ArcadeDriveCommand;
-import org.usfirst.frc.team4915.steamworks.commands.DriveMultiPIDCommand;
 import org.usfirst.frc.team4915.steamworks.commands.StopCommand;
 import org.usfirst.frc.team4915.steamworks.sensors.BNO055;
 import org.usfirst.frc.team4915.steamworks.sensors.IMUPIDSource;
@@ -47,6 +46,12 @@ import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 public class Drivetrain extends SpartronicsSubsystem
 {    
+	
+	public enum MotorSide {
+		Port,
+		Starboard
+	}
+	
     public static final double MAX_OUTPUT_ROBOT_DRIVE = 0.3; //was .3, changing the scaling factor
     
     private static final double TURN_MULTIPLIER = .4;
@@ -531,6 +536,32 @@ public class Drivetrain extends SpartronicsSubsystem
     }
 
     
+    public void driveSideDirect(Drivetrain.MotorSide side, double voltage) {
+    	if (initialized())
+        {
+        	CANTalon motor;
+        	switch (side) {
+        	case Port:
+        		motor = m_portMasterMotor;
+        		break;
+        	case Starboard:
+        		motor = m_starboardMasterMotor;
+        		break;
+        	default:
+        		m_logger.error("driveSideDirect unsupported motor side.");
+        		return;
+        	}
+            if (motor.getControlMode() == TalonControlMode.PercentVbus)
+            {
+                motor.set(voltage);
+            }
+            else
+            {
+                m_logger.warning("driveSideDirect attempt with wrong motor control mode (should be PercentVbus)");
+            }
+        }
+    }
+    
     // Uses arcade drive coupled with the drivestick
     public void driveArcade()
     {
@@ -695,21 +726,21 @@ public class Drivetrain extends SpartronicsSubsystem
         }
     }
     
-    public int getEncPosition(DriveMultiPIDCommand.MotorSide side) {
+    public int getEncVelocity(Drivetrain.MotorSide side) {
     	if (initialized()) {
     		switch (side) {
     		case Port:
-    			return m_portMasterMotor.getEncPosition();
+    			return m_portMasterMotor.getEncVelocity();
     		case Starboard:
-    			return m_starboardMasterMotor.getEncPosition();
+    			return m_starboardMasterMotor.getEncVelocity();
     		default:
-    			m_logger.error("Unsupported motor side passed to getEncPosition");
+    			m_logger.error("Unsupported motor side passed to getEncVelocity");
     			return 0;
     		}
     	}
     	else
     	{
-    		m_logger.error("Call to getEncPosition while the drivetrain is uninitialized");
+    		m_logger.error("Call to getEncVelocity while the drivetrain is uninitialized");
     		return 0;
     	}
     }
