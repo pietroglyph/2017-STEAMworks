@@ -49,7 +49,7 @@ public class DriveStraightCommand extends Command implements PIDSource, PIDOutpu
         m_drivetrain.setControlMode(TalonControlMode.PercentVbus, 6.0, -6.0, // This was 3 and -3
                 0.0, 0, 0, 0 /* zero PIDF */, m_speed /* RobotDrive MaxOutput */);
         m_drivetrain.resetPosition();
-        m_pidController.reset(); // Reset all of the things that have been passed to the IMU in any previous usages
+        m_pidController.reset(); // Reset all of the things that have been passed in previous uses
         m_pidController.setSetpoint(m_revs); // Set the point we want to turn to
         m_heading = m_drivetrain.getIMUHeading();
         m_drivetrain.m_logger.debug("DriveStraightCommand Initial heading: " + m_heading + " m_revs: " + m_revs);

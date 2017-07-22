@@ -14,6 +14,7 @@ import java.util.stream.Collectors;
 import org.usfirst.frc.team4915.steamworks.Logger;
 import org.usfirst.frc.team4915.steamworks.RobotMap;
 import org.usfirst.frc.team4915.steamworks.commands.ArcadeDriveCommand;
+import org.usfirst.frc.team4915.steamworks.commands.DriveMultiPIDCommand;
 import org.usfirst.frc.team4915.steamworks.commands.StopCommand;
 import org.usfirst.frc.team4915.steamworks.sensors.BNO055;
 import org.usfirst.frc.team4915.steamworks.sensors.IMUPIDSource;
@@ -689,8 +690,28 @@ public class Drivetrain extends SpartronicsSubsystem
         }
         else
         {
+    		m_logger.error("Call to getEncPosition while the drivetrain is uninitialized");
             return 0;
         }
+    }
+    
+    public int getEncPosition(DriveMultiPIDCommand.MotorSide side) {
+    	if (initialized()) {
+    		switch (side) {
+    		case Port:
+    			return m_portMasterMotor.getEncPosition();
+    		case Starboard:
+    			return m_starboardMasterMotor.getEncPosition();
+    		default:
+    			m_logger.error("Unsupported motor side passed to getEncPosition");
+    			return 0;
+    		}
+    	}
+    	else
+    	{
+    		m_logger.error("Call to getEncPosition while the drivetrain is uninitialized");
+    		return 0;
+    	}
     }
 
     // Hook called by Robot periodic used to update the SmartDashboard
