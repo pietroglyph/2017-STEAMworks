@@ -25,6 +25,12 @@ public class DriveMultiPIDCommand extends Command {
     private PIDController m_portPIDController;
     private PIDController m_starboardPIDController;
     private ArrayList<ReplayDataPoint> m_replayData;
+    private int m_curReplayIndex = 0;
+    // We are using System.nanoTime as our monotonic time source everywhere,
+    // it has no relation to wall time. Thus, it is unaffected by leap seconds
+    // NTP updates and the like, but needs a start time to be meaningful.
+    // It's also very accurate
+    private long m_startTime;
 	
     // Left motor
     private static final double p_P = 0, p_I = 0, p_D = 0, p_F = 0;
@@ -32,7 +38,7 @@ public class DriveMultiPIDCommand extends Command {
     private static final double s_P = 0, s_I = 0, s_D = 0, s_F = 0;
     
     private static final double INPUT_RANGE_MULTIPLIER = 1.3;
-    private static final double ABSOLUTE_TOLERENCE = 4915; // FIXME: I have no idea what an encoder velocity is (See CANTalon.getEncVelocity()), so I don't know what this should be
+    private static final double ABSOLUTE_TOLERENCE = 4915; // FIXME: I have no idea what an encoder velocity is like (See CANTalon.getEncVelocity()), so I don't know what this should be
     
     public DriveMultiPIDCommand(Drivetrain drivetrain, ArrayList<ReplayDataPoint> replayData) {
     	m_drivetrain = drivetrain;
@@ -99,12 +105,16 @@ public class DriveMultiPIDCommand extends Command {
 
     // Called repeatedly when this Command is scheduled to run
     protected void execute() {
-    	
+    	updatePID(Drivetrain.MotorSide.Port);
+    	updatePID(Drivetrain.MotorSide.Starboard);
     }
 
     // Make this return true when this Command no longer needs to run execute()
     protected boolean isFinished() {
-        return false;
+    	if (m_curReplayIndex > m_replayData.size()-1) {
+			return true;
+		}
+    	return false;
     }
 
     // Called once after isFinished returns true
@@ -120,14 +130,66 @@ public class DriveMultiPIDCommand extends Command {
             assert (!m_starboardPIDController.isEnabled());
         }
         m_drivetrain.stop();
-        m_drivetrain.m_logger.info("DriveStraightCommand end");
+        m_drivetrain.m_logger.info("DriveMultiPIDCommand end");
     }
 
     // Called when another command which requires one or more of the same
     // subsystems is scheduled to run
     protected void interrupted() {
-        m_drivetrain.m_logger.info("DriveStraightCommand interrupted");
+    	end();
+        m_drivetrain.m_logger.info("DriveMultiPIDCommand interrupted");
     }
+    
+    private void updatePID(Drivetrain.MotorSide side) {
+    	PIDController controller;
+    	switch (side) {
+    	case Port:
+    		controller = m_portPIDController;
+    		break;
+    	case Starboard:
+    		controller = m_starboardPIDController;
+    		break;
+    	default:
+    		m_drivetrain.m_logger.error("updatePID unsupported motor side.");
+    		return;
+    	}
+    	// If the controller is enabled then check to see if we're
+    	// done with the current data point, if so set the target to 
+    	// the next one. If the controller isn't enabled, set everything up
+    	// (this resets everything too) including replay index and start time
+    	if (controller.isEnabled()) {
+    		if (m_startTime - System.nanoTime() >= m_replayData.get(m_curReplayIndex+1).timeIndex) {
+    			m_curReplayIndex++;
+    			if (!controller.onTarget()) {
+    				m_drivetrain.m_logger.warning(side.name()+" PID controller is not on target in time.");
+    			}
+    			if (m_curReplayIndex > m_replayData.size()-1) {
+    				return;
+    			}
+    	    	switch (side) {
+    	    	case Port:
+    	    		controller.setSetpoint(m_replayData.get(m_curReplayIndex).portVelocity);
+    	    		break;
+    	    	case Starboard:
+    	    		controller.setSetpoint(m_replayData.get(m_curReplayIndex).starboardVelocity);
+    	    		break;
+    	    	} // We don't need a default here because the previous switch would have defaulted
+    		}
+    	} else {
+    		m_curReplayIndex = 0;
+    		switch (side) {
+	    	case Port:
+	    		controller.setSetpoint(m_replayData.get(m_curReplayIndex).portVelocity);
+	    		break;
+	    	case Starboard:
+	    		controller.setSetpoint(m_replayData.get(m_curReplayIndex).starboardVelocity);
+	    		break;
+	    	} // We also don't need a default here
+    		m_startTime = System.nanoTime();
+    		controller.enable();
+    	}
+    }
+
 }
 
 class SidePID implements PIDSource, PIDOutput {
@@ -163,5 +225,3 @@ class SidePID implements PIDSource, PIDOutput {
 		return m_drivetrain.getEncVelocity(m_side); // There is no documentation anywhere that says what an encoder velocity looks like
 	}
 }
-
-

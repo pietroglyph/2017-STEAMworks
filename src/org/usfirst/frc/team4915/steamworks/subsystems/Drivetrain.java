@@ -12,6 +12,7 @@ import java.util.List;
 import java.util.stream.Collectors;
 
 import org.usfirst.frc.team4915.steamworks.Logger;
+import org.usfirst.frc.team4915.steamworks.ReplayDataPoint;
 import org.usfirst.frc.team4915.steamworks.RobotMap;
 import org.usfirst.frc.team4915.steamworks.commands.ArcadeDriveCommand;
 import org.usfirst.frc.team4915.steamworks.commands.StopCommand;
@@ -98,9 +99,8 @@ public class Drivetrain extends SpartronicsSubsystem
 
     // Replay
     private boolean m_isRecording = false;
-    private Instant m_startedRecordingAt;
-    private final List<Double> m_replayForward = new ArrayList<>();
-    private final List<Double> m_replayRotation = new ArrayList<>();
+    private long m_startedRecordingAt;
+    private final List<ReplayDataPoint> m_replayRecordedData = new ArrayList<>();
     
     //Reverse
     private boolean m_reverseIsOn = false;
@@ -589,7 +589,7 @@ public class Drivetrain extends SpartronicsSubsystem
                 {
                     m_replayForward.add(forward); 
                     m_replayRotation.add(rotation);
-                }
+                }s
                 m_robotDrive.arcadeDrive(forward, rotation, true /*Squared Inputs*/);
             }
             else
@@ -601,11 +601,9 @@ public class Drivetrain extends SpartronicsSubsystem
     
     public void setReverse()
     {
-        
         m_reverseIsOn = true;
         m_lightOutput.set(true);
         SmartDashboard.putString("ReverseEnabled", "Enabled");
-
     }
     
     public void resetReverse(Cameras m_cameras)
