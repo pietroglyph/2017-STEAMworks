@@ -99,8 +99,9 @@ public class Drivetrain extends SpartronicsSubsystem
 
     // Replay
     private boolean m_isRecording = false;
-    private long m_startedRecordingAt;
-    private final List<ReplayDataPoint> m_replayRecordedData = new ArrayList<>();
+    private Instant m_startedRecordingAt;
+    private final List<Double> m_replayForward = new ArrayList<>();
+    private final List<Double> m_replayRotation = new ArrayList<>();
     
     //Reverse
     private boolean m_reverseIsOn = false;
@@ -589,7 +590,7 @@ public class Drivetrain extends SpartronicsSubsystem
                 {
                     m_replayForward.add(forward); 
                     m_replayRotation.add(rotation);
-                }s
+                }
                 m_robotDrive.arcadeDrive(forward, rotation, true /*Squared Inputs*/);
             }
             else
