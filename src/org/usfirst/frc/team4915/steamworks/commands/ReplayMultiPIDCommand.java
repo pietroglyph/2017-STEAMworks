@@ -37,8 +37,9 @@ public class ReplayMultiPIDCommand extends Command {
     //Right motor
     private static final double s_P = 0, s_I = 0, s_D = 0, s_F = 0;
     
-    private static final double INPUT_RANGE_MULTIPLIER = 1.3;
-    private static final double ABSOLUTE_TOLERENCE = 4915; // FIXME: I have no idea what an encoder velocity is like (See CANTalon.getEncVelocity()), so I don't know what this should be
+    // FIXME: I have no idea what an encoder velocity is like (See CANTalon.getEncVelocity()), so I don't know what this should be
+    private static final double INPUT_RANGE = 4915;
+    private static final double ABSOLUTE_TOLERENCE = 4915;
     
     public ReplayMultiPIDCommand(Drivetrain drivetrain) {
     	m_drivetrain = drivetrain;
@@ -49,13 +50,13 @@ public class ReplayMultiPIDCommand extends Command {
     	m_portPIDController = new PIDController(p_P, p_I, p_D, p_F, portPID, portPID);
         m_portPIDController.setOutputRange(-1, 1); // Set the output range so that this works with CANTalon.set() in PercentVBus mode
         // FIXME: Once again, I don't know the input range of CANTalon.getEncVelocity
-        m_portPIDController.setInputRange(-4915, 4915); // We limit our input range to revolutions, either direction
+        m_portPIDController.setInputRange(-INPUT_RANGE, INPUT_RANGE); // We limit our input range to revolutions, either direction
         m_portPIDController.setAbsoluteTolerance(ABSOLUTE_TOLERENCE); // This is the tolerance for error for reaching our target, targeting one inch
     	
         m_starboardPIDController = new PIDController(s_P, s_I, s_D, s_F, starboardPID, starboardPID);
         m_starboardPIDController.setOutputRange(-1, 1); // Set the output range so that this works with CANTalon.set() in PercentVBus mode
         // FIXME: Once again, I don't know the input range of CANTalon.getEncVelocity
-        m_starboardPIDController.setInputRange(-4915, 4915); // We limit our input range to revolutions, either direction
+        m_starboardPIDController.setInputRange(-INPUT_RANGE, INPUT_RANGE); // We limit our input range to revolutions, either direction
         m_starboardPIDController.setAbsoluteTolerance(ABSOLUTE_TOLERENCE); // This is the tolerance for error for reaching our target, targeting one inch
     	
     	requires(m_drivetrain);

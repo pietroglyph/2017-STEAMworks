@@ -5,11 +5,9 @@ import java.nio.file.Files;
 import java.nio.file.Paths;
 import java.nio.file.StandardOpenOption;
 import java.time.Instant;
-import java.time.temporal.ChronoUnit;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.stream.Collectors;
 
 import org.usfirst.frc.team4915.steamworks.Logger;
 import org.usfirst.frc.team4915.steamworks.ReplayDataPoint;
@@ -105,7 +103,6 @@ public class Drivetrain extends SpartronicsSubsystem
     
     //Reverse
     private boolean m_reverseIsOn = false;
-    private int m_replayLaunch = 0;
 
 
     public Drivetrain()
