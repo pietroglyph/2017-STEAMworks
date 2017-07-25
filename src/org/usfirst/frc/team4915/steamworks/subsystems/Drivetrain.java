@@ -61,6 +61,7 @@ public class Drivetrain extends SpartronicsSubsystem
     private static final int QUAD_ENCODER_TICKS_PER_REVOLUTION = QUAD_ENCODER_CODES_PER_REVOLUTION * 4; // This should be one full rotation
 //    private static final double WHEEL_DIAMETER = 6; // Not needed right now
     private static final double WHEEL_CIRCUMFERENCE = 20.06; // This is to account for drift
+    private static final int REPLAY_DATA_POINT_SAMPLE_RATE = 20; // The approximate time between velocity sampling, in milleseconds
 
     private XboxController m_driveStick;// Joystick for ArcadeDrive
     //private Joystick m_altDriveStick; //Alternate Joystick for ArcadeDrive
@@ -99,9 +100,8 @@ public class Drivetrain extends SpartronicsSubsystem
 
     // Replay
     private boolean m_isRecording = false;
-    private Instant m_startedRecordingAt;
-    private final List<Double> m_replayForward = new ArrayList<>();
-    private final List<Double> m_replayRotation = new ArrayList<>();
+    private long m_recordingStartTime;
+    private final ArrayList<ReplayDataPoint> m_currentReplayData = new ArrayList<>();
     
     //Reverse
     private boolean m_reverseIsOn = false;
@@ -586,10 +586,14 @@ public class Drivetrain extends SpartronicsSubsystem
                     forward = 0.0;
                     rotation = 0.0;
                 }
-                if (m_isRecording)
+                if (m_isRecording && m_currentReplayData.get(m_currentReplayData.size()-1).timeIndex+REPLAY_DATA_POINT_SAMPLE_RATE >= (m_recordingStartTime - System.nanoTime()))
                 {
-                    m_replayForward.add(forward); 
-                    m_replayRotation.add(rotation);
+                	// XXX: We could interpolate here if we go over the threshold, but there's no justification for that yet because I haven't been able to test accuracy (or anything)
+                    ReplayDataPoint data = new ReplayDataPoint(
+                    		m_portMasterMotor.getEncVelocity(),
+                    		m_starboardMasterMotor.getEncVelocity(),
+                    		System.nanoTime()-m_recordingStartTime);
+                    m_currentReplayData.add(data);
                 }
                 m_robotDrive.arcadeDrive(forward, rotation, true /*Squared Inputs*/);
             }
@@ -774,45 +778,47 @@ public class Drivetrain extends SpartronicsSubsystem
         setDefaultCommand(new ArcadeDriveCommand(this));
     }
 
+    // Converted
     public void startRecording()
     {
-        m_startedRecordingAt = Instant.now();
-        m_logger.notice("Started recording at " + m_startedRecordingAt);
+        m_recordingStartTime = System.nanoTime();
+        m_logger.notice("Started recording at " + m_recordingStartTime);
 
-        // Get rid of the last program
-        m_replayForward.clear();
-        m_replayRotation.clear();
+        // Clear any previously recorded programs
+        m_currentReplayData.clear();
 
         m_isRecording = true;
     }
 
+    // Converted
     public void stopRecording()
     {
         if (m_isRecording)
         {
-            Instant now = Instant.now();
+            long now = System.nanoTime();
             m_logger.notice("Stopped recording at " + now);
-            long delta = m_startedRecordingAt.until(now, ChronoUnit.SECONDS);
-            m_logger.notice("(After " + delta + " seconds, " + m_replayForward.size() + " entries)");
+            long delta = now - m_recordingStartTime;
+            m_logger.notice("(After " + delta + " seconds, " + m_currentReplayData.size() + " entries)");
 
             m_isRecording = false;
-            if (saveRecording(now.toString()))
+            // Save the recording, if it is successful concatenate the SmartDashboard AutoStrategyOptions with the name of the new program (the time)
+            String timeName = Instant.now().toString();
+            if (saveRecording(timeName))
             {
-                SmartDashboard.putString("AutoStrategyOptions", SmartDashboard.getString("AutoStrategyOptions", "") + ",Replay: " + now.toString());
+                SmartDashboard.putString("AutoStrategyOptions", SmartDashboard.getString("AutoStrategyOptions", "") + ",Replay: " + timeName);
             }
         }
     }
     
     
-
+    // Converted
     public void loadReplay()
     {
         String strategy = SmartDashboard.getString("AutoStrategy", "");
         if (strategy.equals("") || strategy.equals("None"))
         {
             m_logger.notice("No strategy selected, not loading a replay.");
-            m_replayForward.clear();
-            m_replayRotation.clear();
+            m_currentReplayData.clear();
             return;
         }
         if (strategy.startsWith("Replay: "))
@@ -822,57 +828,44 @@ public class Drivetrain extends SpartronicsSubsystem
                 strategy = strategy.replaceFirst("Replay: ", "");
                 m_logger.notice("Loading " + strategy + " from disk...");
                 List<String> lines = Files.readAllLines(Paths.get(System.getProperty("user.home"), "Recordings", strategy));
-                String[] forwardFromFile = lines.get(0).split(",");
-                String[] rotationFromFile = lines.get(1).split(",");
-                if (lines.size() > 2)
-                {
-                    m_replayLaunch = Integer.valueOf(lines.get(2));
-                    if (m_replayLaunch >= forwardFromFile.length || m_replayLaunch < 0)
-                    {
-                        m_logger.debug("Supposed to launch at an invalid step (" + m_replayLaunch + "), max " + forwardFromFile.length);
-                        m_replayLaunch = 0;
-                    }
-                    else
-                    {
-                        m_logger.debug("Will launch at step number " + m_replayLaunch);
-                    }
-                }
-                else
-                {
-                    m_logger.debug("Won't try to launch.");
-                }
+                String[] portFromFile = lines.get(0).split(",");
+                String[] starboardFromFile = lines.get(1).split(",");
+                String[] timeIndexFromFile = lines.get(2).split(",");
+//                if (lines.size() > 2)
+//                {
+//                    m_replayLaunch = Integer.valueOf(lines.get(2));
+//                    if (m_replayLaunch >= forwardFromFile.length || m_replayLaunch < 0)
+//                    {
+//                        m_logger.debug("Supposed to launch at an invalid step (" + m_replayLaunch + "), max " + forwardFromFile.length);
+//                        m_replayLaunch = 0;
+//                    }
+//                    else
+//                    {
+//                        m_logger.debug("Will launch at step number " + m_replayLaunch);
+//                    }
+//                }
+//                else
+//                {
+//                    m_logger.debug("Won't try to launch.");
+//                }
 
-                if (forwardFromFile.length != 0 && rotationFromFile.length != 0)
+                if (portFromFile.length != 0 && starboardFromFile.length != 0 && timeIndexFromFile.length != 0)
                 {
-                    List<Double> forwardProgram = Arrays.asList(forwardFromFile).stream()
-                            .map(Double::parseDouble)
-                            .collect(Collectors.toList());
-                    List<Double> rotationProgram = Arrays.asList(rotationFromFile).stream()
-                            .map(Double::parseDouble)
-                            .collect(Collectors.toList());
-
-                    if (forwardProgram.size() == rotationProgram.size())
-                    {
-                        m_replayForward.clear();
-                        m_replayRotation.clear();
-
-                        // Copying the contents of the temporary lists into the cleared m_
-                        // lists because if we simply m_replayForward = forwardProgram it
-                        // throws errors about assigning to final variables.
-                        m_replayForward.addAll(forwardProgram);
-                        m_replayRotation.addAll(rotationProgram);
-                    }
-                    else
-                    {
-                        m_logger.error("Autonomous program's forward and rotation arrays are different sizes!");
-                        m_logger.debug("Forward array: " + Arrays.toString(forwardFromFile));
-                        m_logger.debug("Rotation array: " + Arrays.toString(rotationFromFile));
-                    }
+                	int i = 0;
+                	for (i = 0; i < portFromFile.length; i++) {
+                		ReplayDataPoint data = new ReplayDataPoint(
+                				Integer.parseInt(portFromFile[i]),
+                				Integer.parseInt(starboardFromFile[i]),
+                				Long.parseLong(timeIndexFromFile[i]));
+                		m_currentReplayData.add(i, data); // We do add instead of an assignment because m_currentReplayData is final
+                	}
+                	
                 }
             }
             catch (NumberFormatException e)
             {
                 m_logger.error("Badly formatted number in replay string");
+                m_logger.exception(e, false);
             }
             catch (IOException e)
             {
@@ -881,18 +874,29 @@ public class Drivetrain extends SpartronicsSubsystem
         }
     }
 
+    // Converted
     private boolean saveRecording(String name)
     {
         m_logger.notice("Saving the recording...");
-        // This takes all the Doubles in m_replayForward, converts them to a list of Strings,
-        // then collects them back into one string by "joining" them together with commas.
-        String forward = m_replayForward.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
-        String rotation = m_replayRotation.stream()
-                .map(String::valueOf)
-                .collect(Collectors.joining(","));
-        List<String> both = Arrays.asList(new String[] {forward, rotation});
+        // Serialize each field of each ReplayDataPoint in the ArrayList and
+        // put it onto its own line of the file, delineated by commas
+        String portVelocity = null;
+        String starboardVelocity = null;
+        String timeIndex = null;
+        for (ReplayDataPoint dataPoint : m_currentReplayData) {
+        	portVelocity += dataPoint.portVelocity;
+        	starboardVelocity += dataPoint.starboardVelocity;
+        	timeIndex += dataPoint.timeIndex;
+        	
+        	if (m_currentReplayData.lastIndexOf(dataPoint) < m_currentReplayData.size()-1) {
+	        	portVelocity += ",";
+	        	starboardVelocity += ",";
+	        	timeIndex += ",";
+        	}
+        }
+        List<String> both = Arrays.asList(new String[] {portVelocity, starboardVelocity, timeIndex});
+        
+        // Try to write the file
         try
         {
             Files.createDirectories(Paths.get(System.getProperty("user.home"), "Recordings"));
@@ -901,27 +905,15 @@ public class Drivetrain extends SpartronicsSubsystem
         }
         catch (IOException e)
         {
-            m_logger.error("Couldn't save!");
-            m_logger.warning("Old Forward:  " + forward);
-            m_logger.warning("Old Rotation: " + rotation);
+            m_logger.error("Couldn't save a replay!");
+            m_logger.warning("Involved portVelocity: "+portVelocity+"\r\nInvolved starboardVelocity: "+starboardVelocity+"\r\nInvolved timeIndex: "+timeIndex); // For debugging purposes
             m_logger.exception(e, false);
             return false;
         }
     }
-
-    public List<Double> getReplayForward()
-    {
-        return m_replayForward;
-    }
-
-    public List<Double> getReplayRotation()
-    {
-        return m_replayRotation;
-    }
-
-    public int getReplayLaunch()
-    {
-        return m_replayLaunch;
+    
+    public ArrayList<ReplayDataPoint> getReplayData() {
+    	return m_currentReplayData;
     }
 
 }

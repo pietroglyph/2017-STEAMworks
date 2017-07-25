@@ -19,7 +19,7 @@ import edu.wpi.first.wpilibj.command.Command;
  * DriveMultiPIDCommand defines a PID for the port and starboard motor
  * which are driven by multiple set points.
  */
-public class DriveMultiPIDCommand extends Command {
+public class ReplayMultiPIDCommand extends Command {
 	
     private final Drivetrain m_drivetrain;
     private PIDController m_portPIDController;
@@ -40,45 +40,22 @@ public class DriveMultiPIDCommand extends Command {
     private static final double INPUT_RANGE_MULTIPLIER = 1.3;
     private static final double ABSOLUTE_TOLERENCE = 4915; // FIXME: I have no idea what an encoder velocity is like (See CANTalon.getEncVelocity()), so I don't know what this should be
     
-    public DriveMultiPIDCommand(Drivetrain drivetrain, ArrayList<ReplayDataPoint> replayData) {
+    public ReplayMultiPIDCommand(Drivetrain drivetrain) {
     	m_drivetrain = drivetrain;
-    	m_replayData = replayData;
     	
     	SidePID portPID = new SidePID(m_drivetrain, Drivetrain.MotorSide.Port);
     	SidePID starboardPID = new SidePID(m_drivetrain, Drivetrain.MotorSide.Starboard);
     	
-        // Get the port upper and lower bounds of ticks by sorting low to high
-    	Collections.sort(m_replayData, new Comparator<ReplayDataPoint>() {
-             @Override
-             public int compare(ReplayDataPoint lhs, ReplayDataPoint rhs) {
-                 return lhs.portVelocity > rhs.portVelocity ? -1 : (lhs.portVelocity < rhs.portVelocity ) ? 1 : 0;
-             }
-        });
-    	
-    	// Get maximum and minimum ticks on the port side
-    	int pMaxTicks = m_replayData.get(m_replayData.size()-1).portVelocity;
-    	int pMinTicks = m_replayData.get(0).portVelocity;
-
-        // Get the starboard upper and lower bounds of ticks by sorting low-to-high
-    	Collections.sort(m_replayData, new Comparator<ReplayDataPoint>() {
-             @Override
-             public int compare(ReplayDataPoint lhs, ReplayDataPoint rhs) {
-                 return lhs.starboardVelocity > rhs.starboardVelocity ? -1 : (lhs.starboardVelocity < rhs.starboardVelocity ) ? 1 : 0;
-             }
-        });
-    	
-    	// Get maximum and minimum ticks on the starboard side
-       	int sMaxTicks = m_replayData.get(m_replayData.size()-1).starboardVelocity;
-    	int sMinTicks = m_replayData.get(0).starboardVelocity;
-    	
     	m_portPIDController = new PIDController(p_P, p_I, p_D, p_F, portPID, portPID);
         m_portPIDController.setOutputRange(-1, 1); // Set the output range so that this works with CANTalon.set() in PercentVBus mode
-        m_portPIDController.setInputRange(pMinTicks * INPUT_RANGE_MULTIPLIER, pMaxTicks * INPUT_RANGE_MULTIPLIER); // We limit our input range to revolutions, either direction
+        // FIXME: Once again, I don't know the input range of CANTalon.getEncVelocity
+        m_portPIDController.setInputRange(-4915, 4915); // We limit our input range to revolutions, either direction
         m_portPIDController.setAbsoluteTolerance(ABSOLUTE_TOLERENCE); // This is the tolerance for error for reaching our target, targeting one inch
     	
         m_starboardPIDController = new PIDController(s_P, s_I, s_D, s_F, starboardPID, starboardPID);
         m_starboardPIDController.setOutputRange(-1, 1); // Set the output range so that this works with CANTalon.set() in PercentVBus mode
-        m_starboardPIDController.setInputRange(sMinTicks * INPUT_RANGE_MULTIPLIER, sMaxTicks * INPUT_RANGE_MULTIPLIER); // We limit our input range to revolutions, either direction
+        // FIXME: Once again, I don't know the input range of CANTalon.getEncVelocity
+        m_starboardPIDController.setInputRange(-4915, 4915); // We limit our input range to revolutions, either direction
         m_starboardPIDController.setAbsoluteTolerance(ABSOLUTE_TOLERENCE); // This is the tolerance for error for reaching our target, targeting one inch
     	
     	requires(m_drivetrain);
@@ -94,6 +71,9 @@ public class DriveMultiPIDCommand extends Command {
         m_portPIDController.reset();
         m_starboardPIDController.reset();
         
+        // This can't be done in the constructor because the constructor is called early enough that the lists are empty
+        m_drivetrain.loadReplay();
+        m_replayData = m_drivetrain.getReplayData();
         // Sort m_replayData by time
     	Collections.sort(m_replayData, new Comparator<ReplayDataPoint>() {
              @Override
@@ -112,6 +92,7 @@ public class DriveMultiPIDCommand extends Command {
     // Make this return true when this Command no longer needs to run execute()
     protected boolean isFinished() {
     	if (m_curReplayIndex > m_replayData.size()-1) {
+    		m_drivetrain.m_logger.notice("ReplayMultiPID finished replaying.");
 			return true;
 		}
     	return false;

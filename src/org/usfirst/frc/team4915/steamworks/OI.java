@@ -16,7 +16,7 @@ import org.usfirst.frc.team4915.steamworks.commands.ClimberSetCommand;
 import org.usfirst.frc.team4915.steamworks.commands.IntakeSetCommand;
 import org.usfirst.frc.team4915.steamworks.commands.LauncherCommand;
 import org.usfirst.frc.team4915.steamworks.commands.RecordingSetCommand;
-import org.usfirst.frc.team4915.steamworks.commands.ReplayCommand;
+import org.usfirst.frc.team4915.steamworks.commands.ReplayMultiPIDCommand;
 import org.usfirst.frc.team4915.steamworks.commands.ReverseArcadeDriveCommand;
 import org.usfirst.frc.team4915.steamworks.commands.groups.ParameterizedCommandGroup;
 import org.usfirst.frc.team4915.steamworks.subsystems.Climber;
@@ -285,7 +285,7 @@ public class OI
                     // Drive to the hopper, wait there to get balls, drive to the boiler
                     result = new ParameterizedCommandGroup(drivetrain, launcher, intake, this,
                         "Straight and Curve", ""+((28+150)-RobotMap.ROBOT_LENGTH), "1", "115", "0.9", "false",
-				    "Intake", "ON",
+                        "Intake", "ON",
         			    "Drive Speed", "-110", "0.6",
         			    "Fast Turn", "45",
         			    "Drive Speed", "125", "0.6");
@@ -307,7 +307,7 @@ public class OI
             if (m_autoReplayOptions.contains(strategy))
             {
                 m_logger.notice("Found a replay named " + replay);
-                return new ReplayCommand(m_robot.getDrivetrain(), m_robot.getLauncher());
+                return new ReplayMultiPIDCommand(m_robot.getDrivetrain());
             }
             m_logger.error("Didn't find " + replay);
             return null;
@@ -335,7 +335,7 @@ public class OI
           //m_replayReplay.whenPressed(new ReplayCommand(m_robot.getDrivetrain(), m_robot.getLauncher()));
         SmartDashboard.putData("StartRecordingCommand", new RecordingSetCommand(m_robot.getDrivetrain(), true));
         SmartDashboard.putData("StopRecordingCommand", new RecordingSetCommand(m_robot.getDrivetrain(), false));
-        SmartDashboard.putData("ReplayCommand", new ReplayCommand(m_robot.getDrivetrain(), m_robot.getLauncher()));
+        SmartDashboard.putData("ReplayCommand", new ReplayMultiPIDCommand(m_robot.getDrivetrain()));
 
         m_reverseDrive.toggleWhenPressed(new ReverseArcadeDriveCommand(m_robot.getDrivetrain(), m_robot.getCameras()));
     }
