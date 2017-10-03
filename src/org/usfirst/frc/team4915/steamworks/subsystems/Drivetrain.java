@@ -583,8 +583,11 @@ public class Drivetrain extends SpartronicsSubsystem
                     forward = 0.0;
                     rotation = 0.0;
                 }
-                if (m_isRecording && m_currentReplayData.get(m_currentReplayData.size()-1).timeIndex+REPLAY_DATA_POINT_SAMPLE_RATE >= (m_recordingStartTime - System.nanoTime()))
+                if ((m_isRecording && !m_currentReplayData.isEmpty() && m_currentReplayData.get(m_currentReplayData.size()-1).timeIndex+REPLAY_DATA_POINT_SAMPLE_RATE >= (m_recordingStartTime - System.nanoTime())) || (m_currentReplayData.isEmpty() && m_isRecording))
                 {
+                    if (m_currentReplayData.isEmpty()) {
+                        m_currentReplayData.clear();
+                    }
                 	// XXX: We could interpolate here if we go over the threshold, but there's no justification for that yet because I haven't been able to test accuracy (or anything)
                     ReplayDataPoint data = new ReplayDataPoint(
                     		m_portMasterMotor.getEncVelocity(),
@@ -778,6 +781,10 @@ public class Drivetrain extends SpartronicsSubsystem
     // Converted
     public void startRecording()
     {
+        // Make sure we're not already recording
+        if (m_isRecording) {
+            stopRecording();
+        }
         m_recordingStartTime = System.nanoTime();
         m_logger.notice("Started recording at " + m_recordingStartTime);
 
@@ -795,7 +802,7 @@ public class Drivetrain extends SpartronicsSubsystem
             long now = System.nanoTime();
             m_logger.notice("Stopped recording at " + now);
             long delta = now - m_recordingStartTime;
-            m_logger.notice("(After " + delta + " seconds, " + m_currentReplayData.size() + " entries)");
+            m_logger.notice("(After " + delta/1000 + " seconds, " + m_currentReplayData.size() + " entries)");
 
             m_isRecording = false;
             // Save the recording, if it is successful concatenate the SmartDashboard AutoStrategyOptions with the name of the new program (the time)
@@ -803,6 +810,10 @@ public class Drivetrain extends SpartronicsSubsystem
             if (saveRecording(timeName))
             {
                 SmartDashboard.putString("AutoStrategyOptions", SmartDashboard.getString("AutoStrategyOptions", "") + ",Replay: " + timeName);
+            }
+            else
+            {
+                m_logger.error("Couldn't save recording!");
             }
         }
     }
@@ -856,7 +867,9 @@ public class Drivetrain extends SpartronicsSubsystem
                 				Long.parseLong(timeIndexFromFile[i]));
                 		m_currentReplayData.add(i, data); // We do add instead of an assignment because m_currentReplayData is final
                 	}
-                	
+                	m_logger.debug("Finished loading replay.");
+                } else {
+                    m_logger.error("Some replay data is too short!");
                 }
             }
             catch (NumberFormatException e)
@@ -877,9 +890,9 @@ public class Drivetrain extends SpartronicsSubsystem
         m_logger.notice("Saving the recording...");
         // Serialize each field of each ReplayDataPoint in the ArrayList and
         // put it onto its own line of the file, delineated by commas
-        String portVelocity = null;
-        String starboardVelocity = null;
-        String timeIndex = null;
+        String portVelocity = "";
+        String starboardVelocity = "";
+        String timeIndex = "";
         for (ReplayDataPoint dataPoint : m_currentReplayData) {
         	portVelocity += dataPoint.portVelocity;
         	starboardVelocity += dataPoint.starboardVelocity;
