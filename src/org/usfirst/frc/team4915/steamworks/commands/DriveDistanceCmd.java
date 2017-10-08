@@ -2,7 +2,7 @@ package org.usfirst.frc.team4915.steamworks.commands;
 
 import org.usfirst.frc.team4915.steamworks.subsystems.Drivetrain;
 
-import com.ctre.CANTalon.TalonControlMode;
+import org.usfirst.frc.team4915.dummy.CANTalon.TalonControlMode;
 
 import edu.wpi.first.wpilibj.command.Command;
 

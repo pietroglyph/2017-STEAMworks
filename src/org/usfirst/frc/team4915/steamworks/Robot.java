@@ -27,7 +27,7 @@ public class Robot extends IterativeRobot
     private Intake m_intake;
     private OI m_oi;
     private Climber m_climber;
-    private Cameras m_cameras;
+//    private Cameras m_cameras;
     private Command m_autoCmd;
 
     private Launcher m_launcher;
@@ -36,16 +36,16 @@ public class Robot extends IterativeRobot
     public void robotInit()
     {
         m_logger = new Logger("Robot", Logger.Level.DEBUG);
-        CANProbe cp = new CANProbe();
-        ArrayList<String> canDevices = cp.Find();
-        m_logger.notice("robotInit CANDevicesFound:\n" + canDevices);
-        SmartDashboard.putString("CANBusStatus", 
-                            canDevices.size() == RobotMap.NUM_CAN_DEVICES ? "OK" : 
-                            (""+canDevices.size()+"/"+RobotMap.NUM_CAN_DEVICES));
+//        CANProbe cp = new CANProbe();
+//        ArrayList<String> canDevices = cp.Find();
+//        m_logger.notice("robotInit CANDevicesFound:\n" + canDevices);
+//        SmartDashboard.putString("CANBusStatus", 
+//                            canDevices.size() == RobotMap.NUM_CAN_DEVICES ? "OK" : 
+//                            (""+canDevices.size()+"/"+RobotMap.NUM_CAN_DEVICES));
         m_drivetrain = new Drivetrain(); // We put drivetrain first so that our IMU is ready for everything else faster
         m_intake = new Intake();
         m_climber = new Climber();
-        m_cameras = new Cameras();
+//        m_cameras = new Cameras();
         m_launcher = new Launcher();
         m_oi = new OI(this); // make sure OI is last
         m_autoCmd = null;
@@ -72,10 +72,10 @@ public class Robot extends IterativeRobot
         return m_drivetrain;
     }
 
-    public Cameras getCameras()
-    {
-        return m_cameras;
-    }
+//    public Cameras getCameras()
+//    {
+//        return m_cameras;
+//    }
 
     public Launcher getLauncher()
     {

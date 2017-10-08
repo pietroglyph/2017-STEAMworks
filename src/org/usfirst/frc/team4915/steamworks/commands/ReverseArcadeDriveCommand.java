@@ -1,6 +1,6 @@
 package org.usfirst.frc.team4915.steamworks.commands;
 
-import com.ctre.CANTalon.TalonControlMode;
+import org.usfirst.frc.team4915.dummy.CANTalon.TalonControlMode;
 import edu.wpi.first.wpilibj.command.Command;
 import org.usfirst.frc.team4915.steamworks.subsystems.Cameras;
 import org.usfirst.frc.team4915.steamworks.subsystems.Drivetrain;
@@ -13,22 +13,18 @@ public class ReverseArcadeDriveCommand extends Command
 {
 
     private final Drivetrain m_drivetrain;
-    private final Cameras m_cameras;
     
-    public ReverseArcadeDriveCommand(Drivetrain drivetrain, Cameras cameras)
+    public ReverseArcadeDriveCommand(Drivetrain drivetrain)
     {
         m_drivetrain = drivetrain;
-        m_cameras = cameras;
 
         requires(m_drivetrain);
-        requires(m_cameras);
     }
 
     @Override
     protected void end()
     {
         m_drivetrain.m_logger.info("ReverseArcadeDriveCommand end");
-        m_drivetrain.resetReverse(m_cameras);
         m_drivetrain.stop();
     }
 

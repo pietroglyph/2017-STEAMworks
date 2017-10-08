@@ -11,6 +11,10 @@ import java.util.Arrays;
 import java.util.List;
 import java.util.stream.Collectors;
 
+import org.usfirst.frc.team4915.dummy.CANTalon;
+import org.usfirst.frc.team4915.dummy.CANTalon.TalonControlMode;
+import org.usfirst.frc.team4915.dummy.CANTalon.FeedbackDevice;
+
 import org.usfirst.frc.team4915.steamworks.ControlManager;
 import org.usfirst.frc.team4915.steamworks.Logger;
 import org.usfirst.frc.team4915.steamworks.RobotMap;
@@ -18,10 +22,6 @@ import org.usfirst.frc.team4915.steamworks.commands.ArcadeDriveCommand;
 import org.usfirst.frc.team4915.steamworks.commands.StopCommand;
 import org.usfirst.frc.team4915.steamworks.sensors.BNO055;
 import org.usfirst.frc.team4915.steamworks.sensors.IMUPIDSource;
-
-import com.ctre.CANTalon;
-import com.ctre.CANTalon.FeedbackDevice;
-import com.ctre.CANTalon.TalonControlMode;
 
 import edu.wpi.first.wpilibj.DigitalOutput;
 import edu.wpi.first.wpilibj.GenericHID;
@@ -59,7 +59,7 @@ public class Drivetrain extends SpartronicsSubsystem
     private XboxController m_driveStick;// Joystick for ArcadeDrive
     //private Joystick m_altDriveStick; //Alternate Joystick for ArcadeDrive
     
-    private static final int LIGHT_OUTPUT_PORT = 0;
+//    private static final int LIGHT_OUTPUT_PORT = 1;
     private DigitalOutput m_lightOutput;
 
     // Port motors
@@ -194,14 +194,14 @@ public class Drivetrain extends SpartronicsSubsystem
             // ^ This will be set elsewhere and probably overridden
 
             // Make a new RobotDrive so we can use built in WPILib functions like ArcadeDrive
-            m_robotDrive = new RobotDrive(m_portMasterMotor, m_starboardMasterMotor);
+            m_robotDrive = new RobotDrive(0, 1);
 
             // Set a max output in volts for RobotDrive
             m_robotDrive.setMaxOutput(MAX_OUTPUT_ROBOT_DRIVE);
 
             loadReplay();
             
-            m_lightOutput = new DigitalOutput(LIGHT_OUTPUT_PORT);
+//            m_lightOutput = new DigitalOutput(LIGHT_OUTPUT_PORT);
             SmartDashboard.putString("ReverseEnabled", "Disabled");
             
             // Register control manger variables
@@ -217,7 +217,7 @@ public class Drivetrain extends SpartronicsSubsystem
             m_controlManager.registerExpressionOutput("Rotation", "sqrt(RJOYX)-LTRIG");
             m_controlManager.registerExpressionOutput("Forward (Reversed)", "-1*RJOYX^(-RTRIG)");
             m_controlManager.registerExpressionOutput("Rotation (Reversed)", "-1*(sqrt(RJOYX)-LTRIG)");
-
+            
             // Debug stuff so everyone knows that we're initialized
             m_logger.info("initialized successfully"); // Tell everyone that the drivetrain is initialized successfully
             

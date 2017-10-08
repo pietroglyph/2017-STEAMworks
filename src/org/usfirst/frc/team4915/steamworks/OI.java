@@ -336,7 +336,7 @@ public class OI
         SmartDashboard.putData("StopRecordingCommand", new RecordingSetCommand(m_robot.getDrivetrain(), false));
         SmartDashboard.putData("ReplayCommand", new ReplayCommand(m_robot.getDrivetrain(), m_robot.getLauncher()));
 
-        m_reverseDrive.toggleWhenPressed(new ReverseArcadeDriveCommand(m_robot.getDrivetrain(), m_robot.getCameras()));
+        m_reverseDrive.toggleWhenPressed(new ReverseArcadeDriveCommand(m_robot.getDrivetrain()));
     }
 
     private void initIntakeOI()

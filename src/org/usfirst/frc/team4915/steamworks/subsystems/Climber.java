@@ -3,8 +3,8 @@ package org.usfirst.frc.team4915.steamworks.subsystems;
 import org.usfirst.frc.team4915.steamworks.Logger;
 import org.usfirst.frc.team4915.steamworks.RobotMap;
 
-import com.ctre.CANTalon;
-import com.ctre.CANTalon.TalonControlMode;
+import org.usfirst.frc.team4915.dummy.CANTalon;
+import org.usfirst.frc.team4915.dummy.CANTalon.TalonControlMode;
 
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
