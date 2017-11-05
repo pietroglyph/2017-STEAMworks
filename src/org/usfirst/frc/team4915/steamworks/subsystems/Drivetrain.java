@@ -23,11 +23,10 @@ import com.ctre.CANTalon.FeedbackDevice;
 import com.ctre.CANTalon.TalonControlMode;
 
 import edu.wpi.first.wpilibj.DigitalOutput;
-import edu.wpi.first.wpilibj.GenericHID;
+import edu.wpi.first.wpilibj.Joystick;
 import edu.wpi.first.wpilibj.PIDController;
 import edu.wpi.first.wpilibj.PIDOutput;
 import edu.wpi.first.wpilibj.RobotDrive;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
 
 /* on Declan's choice for motor names: http://oceanservice.noaa.gov/facts/port-starboard.html
@@ -55,7 +54,7 @@ public class Drivetrain extends SpartronicsSubsystem
 //    private static final double WHEEL_DIAMETER = 6; // Not needed right now
     private static final double WHEEL_CIRCUMFERENCE = 20.06; // This is to account for drift
 
-    private XboxController m_driveStick;// Joystick for ArcadeDrive
+    private Joystick m_driveStick;// Joystick for ArcadeDrive
     //private Joystick m_altDriveStick; //Alternate Joystick for ArcadeDrive
     
     private static final int LIGHT_OUTPUT_PORT = 0;
@@ -317,7 +316,7 @@ public class Drivetrain extends SpartronicsSubsystem
         }
     }
     
-    public void setDriveStick(XboxController s)// Joystick j) // setDriveStick is presumably called once from OI after joystick initialization
+    public void setDriveStick(Joystick s)// Joystick j) // setDriveStick is presumably called once from OI after joystick initialization
     {
         m_driveStick = s;
         //m_altDriveStick = j;
@@ -538,12 +537,12 @@ public class Drivetrain extends SpartronicsSubsystem
             if (m_portMasterMotor.getControlMode() == TalonControlMode.PercentVbus
                     && m_starboardMasterMotor.getControlMode() == TalonControlMode.PercentVbus)
             {
-                double forward = triggerAxis(); // + m_altDriveStick.getY();
-                double rotation = m_driveStick.getX(GenericHID.Hand.kLeft) * TURN_MULTIPLIER; // + m_altDriveStick.getX();
+                double forward = m_driveStick.getY();
+                double rotation = -(m_driveStick.getX() * TURN_MULTIPLIER);
                 if(m_reverseIsOn)
                 {
-                    forward = -triggerAxis(); // - m_altDriveStick.getY();
-                    rotation = m_driveStick.getX(GenericHID.Hand.kLeft) * TURN_MULTIPLIER; // + m_altDriveStick.getX();
+                    forward = -m_driveStick.getY();
+                    rotation = m_driveStick.getX() * TURN_MULTIPLIER;
                     //m_logger.debug("Reverse Engaged");
                 }
                 
@@ -582,22 +581,6 @@ public class Drivetrain extends SpartronicsSubsystem
         m_lightOutput.set(false);
         m_cameras.changeCamera(Cameras.CAM_FWD);
         SmartDashboard.putString("ReverseEnabled", "Disabled");
-    }
-    
-    public double triggerAxis()
-    {
-        if(m_driveStick.getTriggerAxis(GenericHID.Hand.kRight) > 0)
-        {
-            return -(m_driveStick.getTriggerAxis(GenericHID.Hand.kRight));
-        }
-        else if(m_driveStick.getTriggerAxis(GenericHID.Hand.kLeft) > 0)
-        {
-            return (m_driveStick.getTriggerAxis(GenericHID.Hand.kLeft));
-        }
-        else
-        {
-            return 0;
-        }
     }
 
     // driveArcadeDirect exposes minimal access to our robotdrive, can be used

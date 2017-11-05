@@ -27,7 +27,6 @@ import org.usfirst.frc.team4915.steamworks.subsystems.Launcher;
 import org.usfirst.frc.team4915.steamworks.subsystems.Launcher.LauncherState;
 
 import edu.wpi.first.wpilibj.Joystick;
-import edu.wpi.first.wpilibj.XboxController;
 import edu.wpi.first.wpilibj.buttons.JoystickButton;
 import edu.wpi.first.wpilibj.command.Command;
 import edu.wpi.first.wpilibj.smartdashboard.SmartDashboard;
@@ -40,16 +39,16 @@ public class OI
     public static final int AUX_STICK_PORT = 1;
     //public static final int ALT_DRIVE_STICK_PORT = 2;
 
-    public final XboxController m_driveStick = new XboxController(DRIVE_CONTROLLER_PORT);
+    public final Joystick m_driveStick = new Joystick(DRIVE_CONTROLLER_PORT);
     public final Joystick m_auxStick = new Joystick(AUX_STICK_PORT);
     //public final Joystick m_altDriveStick = new Joystick(ALT_DRIVE_STICK_PORT);
 
     //Drive Controller buttons
-    public final JoystickButton m_intakeOn = new JoystickButton(m_driveStick, 1);
-    public final JoystickButton m_intakeOff = new JoystickButton(m_driveStick, 2);
-    public final JoystickButton m_intakeReverse = new JoystickButton(m_driveStick, 4);
+    public final JoystickButton m_intakeOn = new JoystickButton(m_driveStick, 6);
+    public final JoystickButton m_intakeOff = new JoystickButton(m_driveStick, 4);
+    public final JoystickButton m_intakeReverse = new JoystickButton(m_driveStick, 3);
 
-    public final JoystickButton m_reverseDrive = new JoystickButton(m_driveStick, 3);
+    public final JoystickButton m_reverseDrive = new JoystickButton(m_driveStick, 2);
 
     //public final JoystickButton m_cameraFwd = new JoystickButton(m_driveStick, 7);
     //public final JoystickButton m_cameraRev = new JoystickButton(m_driveStick, 8);
